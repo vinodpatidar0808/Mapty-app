@@ -1,5 +1,8 @@
 'use strict';
 
+// NOTE: when you converts and object to a string and convert it back to object then prototype chain is lost.
+// they become regular objects, and does not inherit methods, problem with local storage. to solve this you can restore the objects you get from localStorage to new object
+
 const form = document.querySelector('.form');
 const containerWorkouts = document.querySelector('.workouts');
 const inputType = document.querySelector('.form__input--type');
@@ -77,9 +80,14 @@ class App {
     #mapZoomLevel = 13;
     #workouts = [];
     constructor() {
+        // get user's position
         this._getPosition();
-        form.addEventListener('submit', this._newWorkout.bind(this));
 
+        // get data from localStorage
+        this._getLocalStorage();
+
+        // attach event handlers when app loads
+        form.addEventListener('submit', this._newWorkout.bind(this));
         inputType.addEventListener('change', this._toggleElevationField);
         containerWorkouts.addEventListener(
             'click',
@@ -116,6 +124,11 @@ class App {
         // this on method is from leaflet library not from js
         // if you attach event handler to entire map element you won't be able to know where user clicked and so you will be unable to access location coordinates
         this.#map.on('click', this._showForm.bind(this));
+
+        // for explanation go to _getLocalStorage
+        this.#workouts.forEach(work => {
+            this._renderWorkoutMarker(work);
+        });
     }
 
     _showForm(mapE) {
@@ -181,7 +194,7 @@ class App {
         }
 
         this.#workouts.push(workout);
-        console.log(this.#workouts);
+        // console.log(this.#workouts);
 
         // add new object to workout array
 
@@ -195,6 +208,9 @@ class App {
         this._renderWorkoutMarker(workout);
         this._renderWorkout(workout);
         this._hideForm();
+
+        // set local storage to store all workouts
+        this._setLocalStorage();
     }
     _renderWorkoutMarker(workout) {
         L.marker(workout.coords)
@@ -273,7 +289,7 @@ class App {
         //clear input fields
         inputDistance.value =
             inputDuration.value =
-            inputDuration.value =
+            inputCadence.value =
             inputElevation.value =
                 '';
         form.style.display = 'none';
@@ -291,7 +307,7 @@ class App {
         const workout = this.#workouts.find(
             work => work.id === workoutEl.dataset.id
         );
-        console.log(workout);
+        // console.log(workout);
 
         // there is a method available in leaflet which is available on every map which can take you to a marker popup
         this.#map.setView(workout.coords, this.#mapZoomLevel, {
@@ -302,7 +318,35 @@ class App {
         });
 
         //  using the public interface
-        workout.click();
+        // workout.click();
+    }
+
+    _setLocalStorage() {
+        // local storage is an API available in browser: local storage is simply a key value store
+        // JSON.stringify(object) --> converts any js object to string
+        // local storage is small and blocking so you should not store large amounts of data in it
+        localStorage.setItem('workouts', JSON.stringify(this.#workouts));
+    }
+
+    _getLocalStorage() {
+        // getItem accepts data key which you used to store your data, you  will get JSON data in string format so you have to parse it
+
+        const data = JSON.parse(localStorage.getItem('workouts'));
+        // console.log(data);
+        if (!data) return;
+
+        this.#workouts = data;
+        this.#workouts.forEach(work => {
+            this._renderWorkout(work);
+            // this does not work here because this _getLocalStorage gets executed when page loads but till than map is not loaded yet which causes an error , so shift it after the map has loaded
+            // this._renderWorkoutMarker(work);
+        });
+    }
+
+    reset() {
+        localStorage.removeItem('workouts');
+        // location have a lot of methods and it also has reload  one of them which reloads the page
+        location.reload();
     }
 }
 
