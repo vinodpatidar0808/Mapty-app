@@ -1,7 +1,5 @@
 'use strict';
 
-// NOTE: when you converts and object to a string and convert it back to object then prototype chain is lost.
-// they become regular objects, and does not inherit methods, problem with local storage. to solve this you can restore the objects you get from localStorage to new object
 
 const form = document.querySelector('.form');
 const containerWorkouts = document.querySelector('.workouts');
@@ -13,7 +11,7 @@ const inputElevation = document.querySelector('.form__input--elevation');
 
 class Workout {
     date = new Date();
-    // in real life we generally use to create ids , its not a good idea to create our own ids
+
     id = (Date.now() + '').slice(-10);
     clicks = 0;
     constructor(coords, distance, duration) {
@@ -66,11 +64,6 @@ class Cycling extends Workout {
     }
 }
 
-// const run = new Running([59, -12], 5.2, 24, 170);
-// const cyc = new Cycling([39, -12], 26, 90, 560);
-
-// console.log(run);
-// console.log(cyc);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Application architecture
@@ -121,7 +114,7 @@ class App {
         }).addTo(this.#map);
 
         // handling clicks on a map
-        // this on method is from leaflet library not from js
+        // this "on"" method is from leaflet library not from js
         // if you attach event handler to entire map element you won't be able to know where user clicked and so you will be unable to access location coordinates
         this.#map.on('click', this._showForm.bind(this));
 
@@ -149,7 +142,6 @@ class App {
     _newWorkout(e) {
         e.preventDefault();
         // mapEvent will come from above
-        // console.log(mapEvent);
 
         const validInputs = (...inputs) =>
             inputs.every(inp => Number.isFinite(inp));
@@ -193,20 +185,16 @@ class App {
             workout = new Cycling([lat, lng], distance, duration, elevation);
         }
 
-        this.#workouts.push(workout);
-        // console.log(this.#workouts);
-
         // add new object to workout array
-
+        this.#workouts.push(workout);
+        
         // render workout on map as marker
-
-        //  render workout on list
-
-        // hide form+ clear input fields
-
-        // console.log(lat, lng);
         this._renderWorkoutMarker(workout);
+        
+        //  render workout on list
         this._renderWorkout(workout);
+        
+        // hide form + clear input fields
         this._hideForm();
 
         // set local storage to store all workouts
@@ -338,21 +326,14 @@ class App {
         this.#workouts = data;
         this.#workouts.forEach(work => {
             this._renderWorkout(work);
-            // this does not work here because this _getLocalStorage gets executed when page loads but till than map is not loaded yet which causes an error , so shift it after the map has loaded
-            // this._renderWorkoutMarker(work);
         });
     }
 
     reset() {
         localStorage.removeItem('workouts');
-        // location have a lot of methods and it also has reload  one of them which reloads the page
         location.reload();
     }
 }
 
 const app = new App();
-// to avoid this we have a method in class that gets executed immediately when object is created, constructor method.
-// app._getPosition()
 
-// geolocation API : browser API
-// getCurrentPosition(success callback fxn, error callback fxn)
